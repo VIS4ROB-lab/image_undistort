@@ -196,17 +196,34 @@ void Depth::calcPointCloud(
       bool freespace;
       double disparity_value;
 
-      // if the filled disparity is valid it must be a freespace ray
-      if (filled_value < std::numeric_limits<int16_t>::max()) {
-        disparity_value = static_cast<double>(filled_value);
-        freespace = true;
-      }
-      // else it is a normal ray
-      else if (is_valid) {
+      // freespace points will be placed at this distance
+      double constexpr sensor_range = 8; // m
+
+      if(is_valid){
+        // normal ray
         disparity_value = static_cast<double>(input_value);
         freespace = false;
-      } else {
+      }else if(filled_value < std::numeric_limits<int16_t>::max()){
+        // filled freespace ray
+        disparity_value = static_cast<double>(filled_value);
+        freespace = true;
+      }else if(input_value >= (min_disparity_ + num_disparities_ - 1) * 16){
+        // valid freespace ray we set at sensor range
+        double disparity = (16 * focal_length * baseline) / sensor_range;
+        disparity_value = disparity;
+        freespace = true;
+      }else{
+        // invalid
         continue;
+      }
+
+      // disable, if all points should be publish in the same pointcloud
+      constexpr bool separate_freespace = true;
+
+      if(freespace && !separate_freespace){
+        // in this case we need to move all freespace rays out of sensor range
+        double disparity = (16 * focal_length * baseline) / sensor_range;
+        disparity_value = disparity;
       }
 
       pcl::PointXYZRGB point;
@@ -233,7 +250,7 @@ void Depth::calcPointCloud(
         point.r = point.b;
       }
 
-      if (freespace) {
+      if (freespace && separate_freespace) {
         freespace_pointcloud->push_back(point);
       } else {
         pointcloud->push_back(point);
