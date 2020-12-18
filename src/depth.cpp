@@ -180,11 +180,13 @@ void Depth::calcPointCloud(
 
   int side_bound = sad_window_size_ / 2;
 
+  constexpr int subsampling_step = 1;
+
   // build pointcloud
   for (int y_pixels = side_bound; y_pixels < input_disparity.rows - side_bound;
-       ++y_pixels) {
+       y_pixels+=subsampling_step) {
     for (int x_pixels = side_bound + min_disparity_ + num_disparities_;
-         x_pixels < input_disparity.cols - side_bound; ++x_pixels) {
+         x_pixels < input_disparity.cols - side_bound; x_pixels+=subsampling_step) {
       const uint8_t& is_valid = input_valid.at<uint8_t>(y_pixels, x_pixels);
       const int16_t& input_value =
           input_disparity.at<int16_t>(y_pixels, x_pixels);
