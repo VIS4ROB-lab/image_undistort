@@ -217,14 +217,14 @@ void Depth::calcPointCloud(
 
       if (left_image.channels() == 3) {
         const cv::Vec3b& color = left_image.at<cv::Vec3b>(y_pixels, x_pixels);
-        point.b = color[0];
+        point.r = color[0];
         point.g = color[1];
-        point.r = color[2];
+        point.b = color[2];
       } else if (left_image.channels() == 4) {
         const cv::Vec4b& color = left_image.at<cv::Vec4b>(y_pixels, x_pixels);
-        point.b = color[0];
+        point.r = color[0];
         point.g = color[1];
-        point.r = color[2];
+        point.b = color[2];
       } else {
         point.b = left_image.at<uint8_t>(y_pixels, x_pixels);
         point.g = point.b;
