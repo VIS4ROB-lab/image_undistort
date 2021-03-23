@@ -180,7 +180,12 @@ void Depth::calcPointCloud(
 
   int side_bound = sad_window_size_ / 2;
 
+  // subsampling the image to reduce number of points
   constexpr int subsampling_step = 1;
+  // freespace points will be placed at this distance
+  double constexpr sensor_range = 8; // m
+  // disable, if all points should be publish in the same pointcloud
+  constexpr bool separate_freespace = true;
 
   // build pointcloud
   for (int y_pixels = side_bound; y_pixels < input_disparity.rows - side_bound;
@@ -196,8 +201,6 @@ void Depth::calcPointCloud(
       bool freespace;
       double disparity_value;
 
-      // freespace points will be placed at this distance
-      double constexpr sensor_range = 8; // m
 
       if(is_valid){
         // normal ray
@@ -207,6 +210,11 @@ void Depth::calcPointCloud(
         // filled freespace ray
         disparity_value = static_cast<double>(filled_value);
         freespace = true;
+        if(!separate_freespace){
+          // if we are not separating, these freespace points 
+          // would be indistinguishable from surface points, thus we ignore them
+          continue;
+        }
       }else if(input_value >= (min_disparity_ + num_disparities_ - 1) * 16){
         // valid freespace ray we set at sensor range
         double disparity = (16 * focal_length * baseline) / sensor_range;
@@ -215,15 +223,6 @@ void Depth::calcPointCloud(
       }else{
         // invalid
         continue;
-      }
-
-      // disable, if all points should be publish in the same pointcloud
-      constexpr bool separate_freespace = true;
-
-      if(freespace && !separate_freespace){
-        // in this case we need to move all freespace rays out of sensor range
-        double disparity = (16 * focal_length * baseline) / sensor_range;
-        disparity_value = disparity;
       }
 
       pcl::PointXYZRGB point;
